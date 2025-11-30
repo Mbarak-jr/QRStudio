@@ -4,6 +4,55 @@ import { logger } from '../utils/logger.js';
 
 class QRService {
   /**
+   * Convert complex data objects to QR code string format
+   */
+  convertDataToQRString(data, type) {
+    switch (type) {
+      case 'text':
+      case 'url':
+        return data; // Already a string
+
+      case 'email':
+        // Format: mailto:email@example.com?subject=Hello&body=Message
+        const emailParams = new URLSearchParams();
+        if (data.subject) emailParams.append('subject', data.subject);
+        if (data.body) emailParams.append('body', data.body);
+        const emailQuery = emailParams.toString();
+        return `mailto:${data.email}${emailQuery ? `?${emailQuery}` : ''}`;
+
+      case 'phone':
+        // Format: tel:+1234567890
+        const cleanPhone = data.phone.replace(/\s/g, '');
+        return `tel:${cleanPhone}`;
+
+      case 'wifi':
+        // Format: WIFI:S:SSID;T:Encryption;P:Password;H:Hidden;;
+        return `WIFI:S:${data.ssid};T:${data.encryption};P:${data.password};H:${data.hidden ? 'true' : 'false'};;`;
+
+      case 'vcard':
+        // Format: vCard as string
+        const vcardLines = [
+          'BEGIN:VCARD',
+          'VERSION:3.0',
+          `FN:${data.firstName} ${data.lastName}`
+        ];
+        
+        if (data.organization) vcardLines.push(`ORG:${data.organization}`);
+        if (data.jobTitle) vcardLines.push(`TITLE:${data.jobTitle}`);
+        if (data.phone) vcardLines.push(`TEL:${data.phone}`);
+        if (data.email) vcardLines.push(`EMAIL:${data.email}`);
+        if (data.website) vcardLines.push(`URL:${data.website}`);
+        if (data.address) vcardLines.push(`ADR:;;${data.address}`);
+        
+        vcardLines.push('END:VCARD');
+        return vcardLines.join('\n');
+
+      default:
+        return String(data);
+    }
+  }
+
+  /**
    * Generate and save QR code
    * @param {Object} qrData - QR code data and options
    * @returns {Promise<Object>} Generated QR code document
@@ -19,17 +68,20 @@ class QRService {
         colorLight = '#FFFFFF'
       } = qrData;
 
-      // Validate input data
-      if (!data || data.trim().length === 0) {
+      // Validate input data based on type
+      if (!data) {
         throw new Error('QR code data is required');
       }
 
-      if (data.length > 4000) {
+      // Convert data to QR string format for QR code generation
+      const qrString = this.convertDataToQRString(data, type);
+
+      if (qrString.length > 4000) {
         throw new Error('QR code data is too long (max 4000 characters)');
       }
 
       // Generate QR code image
-      const qrCodeImage = await generateQRCode(data, {
+      const qrCodeImage = await generateQRCode(qrString, {
         size,
         margin,
         colorDark,
@@ -38,7 +90,7 @@ class QRService {
 
       // Create QR code document
       const qrCodeDoc = new QRCode({
-        data: data.trim(),
+        data: data, // Store the original data structure
         type,
         size,
         margin,

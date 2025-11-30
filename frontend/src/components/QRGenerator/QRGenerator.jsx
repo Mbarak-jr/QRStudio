@@ -3,31 +3,160 @@ import { useQRStore } from '../../store/useQRStore'
 import QRPreview from './QRPreview'
 import Button from '../UI/Button'
 import InputField from '../UI/InputField'
+import QRFormRenderer from './QRFormRenderer'
 
 const QRGenerator = () => {
   const { generateQR, isLoading, error } = useQRStore()
+  
+  // Initialize form data based on type
   const [formData, setFormData] = useState({
-    data: '',
     type: 'text',
+    data: '',
+    // Common QR properties
     size: 300,
     margin: 1,
     colorDark: '#000000',
     colorLight: '#ffffff',
+    // Initialize all possible fields
+    email: '',
+    subject: '',
+    body: '',
+    phone: '',
+    ssid: '',
+    encryption: 'WPA',
+    password: '',
+    hidden: false,
+    firstName: '',
+    lastName: '',
+    organization: '',
+    website: '',
+    address: '',
+    jobTitle: ''
   })
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value, type, checked } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'checkbox' ? checked : value
     }))
+  }
+
+  const handleTypeChange = (type) => {
+    // Reset form data when type changes, but keep common properties
+    setFormData(prev => ({
+      ...prev,
+      type,
+      data: '',
+      email: '',
+      subject: '',
+      body: '',
+      phone: '',
+      ssid: '',
+      encryption: 'WPA',
+      password: '',
+      hidden: false,
+      firstName: '',
+      lastName: '',
+      organization: '',
+      website: '',
+      address: '',
+      jobTitle: ''
+    }))
+  }
+
+  const formatQRData = () => {
+    const baseData = {
+      type: formData.type,
+      size: formData.size,
+      margin: formData.margin,
+      colorDark: formData.colorDark,
+      colorLight: formData.colorLight,
+    }
+
+    switch (formData.type) {
+      case 'text':
+      case 'url':
+        return { ...baseData, data: formData.data }
+
+      case 'email':
+        return {
+          ...baseData,
+          data: {
+            email: formData.email,
+            subject: formData.subject,
+            body: formData.body
+          }
+        }
+
+      case 'phone':
+        return {
+          ...baseData,
+          data: {
+            phone: formData.phone
+          }
+        }
+
+      case 'wifi':
+        return {
+          ...baseData,
+          data: {
+            ssid: formData.ssid,
+            encryption: formData.encryption,
+            password: formData.password,
+            hidden: formData.hidden
+          }
+        }
+
+      case 'vcard':
+        return {
+          ...baseData,
+          data: {
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            organization: formData.organization,
+            phone: formData.phone,
+            email: formData.email,
+            website: formData.website,
+            address: formData.address,
+            jobTitle: formData.jobTitle
+          }
+        }
+
+      default:
+        return { ...baseData, data: formData.data }
+    }
+  }
+
+  const validateForm = () => {
+    switch (formData.type) {
+      case 'text':
+      case 'url':
+        return !!formData.data.trim()
+      
+      case 'email':
+        return !!formData.email.trim()
+      
+      case 'phone':
+        return !!formData.phone.trim()
+      
+      case 'wifi':
+        return !!formData.ssid.trim()
+      
+      case 'vcard':
+        return !!formData.firstName.trim() && !!formData.lastName.trim() && !!formData.phone.trim()
+      
+      default:
+        return false
+    }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!formData.data.trim()) return
+    if (!validateForm()) return
 
-    await generateQR(formData)
+    const qrData = formatQRData()
+    await generateQR(qrData)
   }
 
   const qrTypes = [
@@ -71,7 +200,7 @@ const QRGenerator = () => {
                   <button
                     key={type.value}
                     type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, type: type.value }))}
+                    onClick={() => handleTypeChange(type.value)}
                     className={`p-3 rounded-lg border transition-all duration-200 ${
                       formData.type === type.value
                         ? 'bg-cyan-500/20 border-cyan-400 text-cyan-400 shadow-lg shadow-cyan-500/25'
@@ -84,20 +213,8 @@ const QRGenerator = () => {
               </div>
             </div>
 
-            <InputField
-              label="Content *"
-              name="data"
-              type="text"
-              value={formData.data}
-              onChange={handleChange}
-              placeholder={
-                formData.type === 'url' ? 'https://example.com' :
-                formData.type === 'email' ? 'email@example.com' :
-                formData.type === 'phone' ? '+1234567890' :
-                'Enter your text content...'
-              }
-              required
-            />
+            {/* Dynamic Form Renderer */}
+            <QRFormRenderer formData={formData} handleChange={handleChange} />
 
             <div className="grid grid-cols-2 gap-4">
               <InputField
@@ -168,7 +285,7 @@ const QRGenerator = () => {
 
             <Button
               type="submit"
-              disabled={isLoading || !formData.data.trim()}
+              disabled={isLoading || !validateForm()}
               className="w-full py-4 text-lg font-semibold"
             >
               {isLoading ? (

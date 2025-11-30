@@ -15,7 +15,7 @@ const Navbar = () => {
   }
 
   return (
-    <nav className="bg-linear-to-r from-slate-900 via-purple-900 to-slate-900 shadow-xl border-b border-purple-500/20">
+    <nav className="fixed top-0 left-0 w-full z-50 bg-linear-to-r from-slate-900 via-purple-900 to-slate-900 shadow-xl border-b border-purple-500/20 backdrop-blur-lg">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           

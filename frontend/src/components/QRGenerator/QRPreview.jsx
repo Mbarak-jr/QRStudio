@@ -10,6 +10,63 @@ const QRPreview = () => {
     }
   }
 
+  // Format the content for display based on type
+  const formatContent = (content, type) => {
+    if (typeof content === 'string') {
+      return content
+    }
+
+    // Handle complex objects
+    if (typeof content === 'object' && content !== null) {
+      switch (type) {
+        case 'email':
+          return `Email: ${content.email}\nSubject: ${content.subject || 'No subject'}\nBody: ${content.body || 'No body'}`
+        
+        case 'phone':
+          return `Phone: ${content.phone}`
+        
+        case 'wifi':
+          return `WiFi: ${content.ssid}\nEncryption: ${content.encryption}\nPassword: ${content.password ? '••••••••' : 'No password'}\nHidden: ${content.hidden ? 'Yes' : 'No'}`
+        
+        case 'vcard':
+          return `Contact: ${content.firstName} ${content.lastName}\nOrganization: ${content.organization || 'N/A'}\nPhone: ${content.phone}\nEmail: ${content.email || 'N/A'}\nJob Title: ${content.jobTitle || 'N/A'}`
+        
+        default:
+          return JSON.stringify(content, null, 2)
+      }
+    }
+
+    return 'No content available'
+  }
+
+  // Get a short summary for the main display
+  const getContentSummary = (content, type) => {
+    if (typeof content === 'string') {
+      return content.length > 100 ? content.substring(0, 100) + '...' : content
+    }
+
+    if (typeof content === 'object' && content !== null) {
+      switch (type) {
+        case 'email':
+          return `Email: ${content.email}`
+        
+        case 'phone':
+          return `Phone: ${content.phone}`
+        
+        case 'wifi':
+          return `WiFi: ${content.ssid}`
+        
+        case 'vcard':
+          return `Contact: ${content.firstName} ${content.lastName}`
+        
+        default:
+          return 'Custom QR Content'
+      }
+    }
+
+    return 'No content'
+  }
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-96">
@@ -63,11 +120,21 @@ const QRPreview = () => {
             </div>
 
             <div className="pt-3 border-t border-slate-600/30">
-              <span className="font-medium text-gray-300 block mb-2">Content:</span>
-              <p className="text-gray-300 text-sm bg-slate-700/30 rounded-lg p-3 break-all">
-                {currentQR.content}
+              <span className="font-medium text-gray-300 block mb-2">Content Preview:</span>
+              <p className="text-gray-300 text-sm bg-slate-700/30 rounded-lg p-3 break-word">
+                {getContentSummary(currentQR.content, currentQR.type)}
               </p>
             </div>
+
+            {/* Detailed content for complex types */}
+            {typeof currentQR.content === 'object' && currentQR.content !== null && (
+              <div className="pt-3 border-t border-slate-600/30">
+                <span className="font-medium text-gray-300 block mb-2">Full Details:</span>
+                <pre className="text-gray-300 text-xs bg-slate-700/30 rounded-lg p-3 whitespace-pre-wrap break-word">
+                  {formatContent(currentQR.content, currentQR.type)}
+                </pre>
+              </div>
+            )}
           </div>
 
           {/* Download Button */}
