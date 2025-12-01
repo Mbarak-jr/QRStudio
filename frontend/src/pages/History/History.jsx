@@ -1,67 +1,51 @@
 import { useEffect } from 'react'
 import { useQRStore } from '../../store/useQRStore'
+import HistoryHeader from '../../components/QRHistory/HistoryHeader'
+import HistoryList from '../../components/QRHistory/HistoryList'
+import HistoryCard from '../../components/QRHistory/HistoryCard'
+import EmptyState from '../../components/QRHistory/EmptyState'
+import LoadingState from '../../components/QRHistory/LoadingState'
+import ErrorState from '../../components/QRHistory/ErrorState'
 
 const History = () => {
   const { qrHistory, getQRHistory, isLoading, error } = useQRStore()
 
+  // Fetch history on load
   useEffect(() => {
     getQRHistory()
   }, [getQRHistory])
 
+  // Debug console logs
+  useEffect(() => {
+    if (qrHistory.length > 0) {
+      console.log('QR History:', qrHistory)
+      console.log('First QR properties:', {
+        id: qrHistory[0]?.id,
+        imageUrl: qrHistory[0]?.imageUrl?.substring(0, 50),
+        content: qrHistory[0]?.content,
+        type: qrHistory[0]?.type
+      })
+    }
+  }, [qrHistory])
+
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-    )
+    return <LoadingState />
   }
 
   if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-700">{error}</p>
-      </div>
-    )
+    return <ErrorState error={error} />
   }
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">QR Code History</h1>
-        <p className="text-gray-600">Your previously generated QR codes</p>
-      </div>
-
+      <HistoryHeader count={qrHistory.length} />
+      
       {qrHistory.length === 0 ? (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">📄</div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No QR codes yet</h3>
-          <p className="text-gray-600">Generate your first QR code to see it here</p>
-        </div>
+        <EmptyState />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {qrHistory.map((qr) => (
-            <div key={qr.id} className="card">
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <img
-                  src={qr.imageUrl}
-                  alt="QR Code"
-                  className="w-full h-auto mx-auto"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600 break-word">
-                  <span className="font-medium">Content:</span> {qr.content}
-                </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Size:</span> {qr.size}px
-                </p>
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium">Created:</span>{' '}
-                  {new Date(qr.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
+            <HistoryCard key={qr.id} qr={qr} />
           ))}
         </div>
       )}
