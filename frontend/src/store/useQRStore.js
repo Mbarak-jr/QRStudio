@@ -8,18 +8,6 @@ export const useQRStore = create((set, get) => ({
   error: null,
   toast: null,
 
-  // Utility: ensure loader stays visible long enough
-  withMinimumLoading: async (promise, minTime = 600) => {
-    const start = Date.now();
-    const result = await promise;
-    const elapsed = Date.now() - start;
-
-    if (elapsed < minTime) {
-      await new Promise((res) => setTimeout(res, minTime - elapsed));
-    }
-    return result;
-  },
-
   // -------------------------------------------------------
   // Generate QR Code
   // -------------------------------------------------------
@@ -27,10 +15,7 @@ export const useQRStore = create((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await get().withMinimumLoading(
-        qrService.generateQR(qrData)
-      );
-
+      const response = await qrService.generateQR(qrData);
       const qr = response.data?.data;
 
       const newQR = {
@@ -63,21 +48,19 @@ export const useQRStore = create((set, get) => ({
       });
 
       setTimeout(() => set({ toast: null }), 5000);
+
       throw error;
     }
   },
 
   // -------------------------------------------------------
-  // Get QR History (Retry for Render cold starts)
+  // Get QR History (with retry for Render cold start)
   // -------------------------------------------------------
   getQRHistory: async (retry = false) => {
     set({ isLoading: true, error: null });
 
     try {
-      const response = await get().withMinimumLoading(
-        qrService.getQRCodes()
-      );
-
+      const response = await qrService.getQRCodes();
       const list = response.data?.data?.qrCodes || [];
 
       const history = list.map((qr) => ({
@@ -94,8 +77,8 @@ export const useQRStore = create((set, get) => ({
         isLoading: false,
       });
     } catch (error) {
+      // On Render cold-start, retry automatically once after 2 seconds
       if (!retry) {
-        // Retry once after cold start
         set({ isLoading: true });
         setTimeout(() => {
           get().getQRHistory(true);
@@ -124,10 +107,7 @@ export const useQRStore = create((set, get) => ({
     set({ isLoading: true, error: null });
 
     try {
-      const response = await get().withMinimumLoading(
-        qrService.getQRCode(id)
-      );
-
+      const response = await qrService.getQRCode(id);
       const qr = response.data?.data;
 
       const formatted = {
@@ -163,9 +143,7 @@ export const useQRStore = create((set, get) => ({
   // -------------------------------------------------------
   deleteQRCode: async (id) => {
     try {
-      const response = await get().withMinimumLoading(
-        qrService.deleteQRCode(id)
-      );
+      const response = await qrService.deleteQRCode(id);
 
       if (!response.data?.success) {
         throw new Error("Failed to delete QR code");
