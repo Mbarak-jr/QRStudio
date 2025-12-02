@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import { useState } from 'react'
+import { ArrowLeft } from 'lucide-react'
 
 const Navbar = () => {
   const location = useLocation()
@@ -14,12 +15,14 @@ const Navbar = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
   }
 
+  const isHistoryPage = location.pathname === "/history"
+
   return (
     <nav className="fixed top-0 left-0 w-full z-50 bg-linear-to-r from-slate-900 via-purple-900 to-slate-900 shadow-xl border-b border-purple-500/20 backdrop-blur-lg">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          
-          {/* Logo Section */}
+
+          {/* Logo */}
           <Link 
             to="/" 
             className="flex items-center space-x-3 group"
@@ -46,7 +49,19 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex space-x-1">
+          <div className="hidden md:flex items-center space-x-2">
+
+            {/* Show Back Button ONLY on History page */}
+            {isHistoryPage && (
+              <Link
+                to="/"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-white/10 text-cyan-300 hover:bg-white/20 transition-all duration-300"
+              >
+                <ArrowLeft size={18} />
+                Back to Home
+              </Link>
+            )}
+
             {navItems.map((item) => (
               <Link
                 key={item.path}
@@ -69,7 +84,6 @@ const Navbar = () => {
           <button
             onClick={toggleMobileMenu}
             className="md:hidden flex flex-col justify-center items-center w-10 h-10 rounded-lg hover:bg-white/10 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-opacity-50"
-            aria-label="Toggle menu"
           >
             <span className={`w-6 h-0.5 bg-gray-300 transition-all duration-300 ${isMobileMenuOpen ? 'rotate-45 translate-y-1.5 bg-cyan-400' : ''}`}></span>
             <span className={`w-6 h-0.5 bg-gray-300 transition-all duration-300 mt-1.5 ${isMobileMenuOpen ? 'opacity-0' : ''}`}></span>
@@ -79,9 +93,22 @@ const Navbar = () => {
 
         {/* Mobile Navigation */}
         <div className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${
-          isMobileMenuOpen ? 'max-h-32 opacity-100 py-2' : 'max-h-0 opacity-0'
+          isMobileMenuOpen ? 'max-h-40 opacity-100 py-2' : 'max-h-0 opacity-0'
         }`}>
-          <div className="flex flex-col space-y-2 pb-2">
+
+          {/* Back button for MOBILE ONLY on history page */}
+          {isHistoryPage && (
+            <Link
+              to="/"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-2 px-4 py-3 rounded-lg text-base font-medium text-cyan-300 bg-white/10 hover:bg-white/20 transition-all duration-200"
+            >
+              <ArrowLeft size={20} />
+              Back to Home
+            </Link>
+          )}
+
+          <div className="flex flex-col space-y-2 pb-2 mt-2">
             {navItems.map((item) => (
               <Link
                 key={item.path}
