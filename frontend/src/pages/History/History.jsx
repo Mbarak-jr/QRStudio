@@ -1,19 +1,23 @@
 import { useEffect } from 'react'
 import { useQRStore } from '../../store/useQRStore'
 import HistoryHeader from '../../components/QRHistory/HistoryHeader'
-import HistoryList from '../../components/QRHistory/HistoryList'
 import HistoryCard from '../../components/QRHistory/HistoryCard'
 import EmptyState from '../../components/QRHistory/EmptyState'
 import LoadingState from '../../components/QRHistory/LoadingState'
 import ErrorState from '../../components/QRHistory/ErrorState'
 
 const History = () => {
-  const { qrHistory, getQRHistory, isLoading, error } = useQRStore()
+  // Use stable selectors — prevents unnecessary rerenders
+  const qrHistory = useQRStore((state) => state.qrHistory)
+  const getQRHistory = useQRStore((state) => state.getQRHistory)
+  const isLoading = useQRStore((state) => state.isLoading)
+  const error = useQRStore((state) => state.error)
 
-  // Fetch history on load
+  // Fetch history once (prevents infinite loop)
   useEffect(() => {
     getQRHistory()
-  }, [getQRHistory])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Debug console logs
   useEffect(() => {
@@ -23,23 +27,19 @@ const History = () => {
         id: qrHistory[0]?.id,
         imageUrl: qrHistory[0]?.imageUrl?.substring(0, 50),
         content: qrHistory[0]?.content,
-        type: qrHistory[0]?.type
+        type: qrHistory[0]?.type,
       })
     }
   }, [qrHistory])
 
-  if (isLoading) {
-    return <LoadingState />
-  }
-
-  if (error) {
-    return <ErrorState error={error} />
-  }
+  // UI states
+  if (isLoading) return <LoadingState />
+  if (error) return <ErrorState error={error} />
 
   return (
     <div className="space-y-6">
       <HistoryHeader count={qrHistory.length} />
-      
+
       {qrHistory.length === 0 ? (
         <EmptyState />
       ) : (
